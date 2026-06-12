@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Client Programming Sheet</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #111111;
+  --surface: #1a1a1a;
+  --surface2: #222222;
+  --border: #2e2e2e;
+  --accent: #c9a94e;
+  --text: #e8e8e8;
+  --text-muted: #888888;
+  --text-dim: #555555;
+  --green: #5ead7a;
+  --red: #e05555;
+  --radius: 6px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { overflow-x: hidden; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Barlow', sans-serif;
+  font-size: 14px;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  background: #0d0d0d;
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 52px;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  flex-wrap: nowrap;
+}
+.brand {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  color: var(--text);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.brand span { color: var(--accent); }
+.divider-v { width: 1px; height: 20px; background: var(--border); flex-shrink: 0; }
+.topbar-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.topbar-right { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.topbar-hint { font-size: 11px; color: var(--text-dim); font-style: italic; white-space: nowrap; }
+
+/* Shared button base */
+.tb-btn {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border-radius: 4px;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: opacity 0.15s, background 0.15s, color 0.15s, border-color 0.15s, transform 0.1s;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  min-height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.tb-btn:active { transform: scale(0.96); }
+
+.edit-toggle-btn { background: rgba(201,169,78,0.1); color: var(--accent); border-color: rgba(201,169,78,0.3); }
+.edit-toggle-btn.active { background: var(--accent); color: #111; border-color: var(--accent); }
+.undo-btn, .redo-btn { background: rgba(168,137,212,0.1); color: #a889d4; border-color: rgba(168,137,212,0.25); font-size: 15px; padding: 4px 10px; }
+.undo-btn:hover, .redo-btn:hover { background: rgba(168,137,212,0.22); }
+.undo-btn:disabled, .redo-btn:disabled { opacity: 0.28; cursor: not-allowed; }
+
+.save-btn:hover { opacity: 0.85; }
+.save-btn.saved { background: var(--green); color: #fff; border-color: var(--green); }
+.clear-btn { background: transparent; color: var(--text-dim); border-color: var(--border); }
+.clear-btn:hover { color: var(--red); border-color: var(--red); background: rgba(224,85,85,0.06); }
+
+/* ── LAYOUT ── */
+.layout { display: flex; min-height: calc(100dvh - 52px); }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: 200px;
+  min-width: 200px;
+  background: #0f0f0f;
+  border-right: 1px solid var(--border);
+  padding: 16px 0;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  position: sticky;
+  top: 52px;
+  height: calc(100dvh - 52px);
+  overflow-y: auto;
+}
+.sidebar-section-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding: 14px 16px 6px;
+}
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 16px;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-family: 'Barlow', sans-serif;
+  font-size: 12.5px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.15s, background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 36px;
+}
+.sidebar-link:hover { color: var(--text); background: var(--surface); }
+.sidebar-link.active { color: var(--accent); background: rgba(201,169,78,0.07); }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-dim); flex-shrink: 0; }
+.sidebar-link.active .dot { background: var(--accent); }
+
+/* sidebar toggle button */
+.sidebar-toggle {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; height: 38px; margin-top: auto; flex-shrink: 0;
+  background: transparent; border: none; border-top: 1px solid var(--border);
+  color: var(--text-dim); cursor: pointer; font-size: 18px; line-height: 1;
+  transition: color 0.15s, background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.sidebar-toggle:hover { color: var(--text); background: var(--surface); }
+/* collapsed state — desktop/tablet */
+.sidebar.collapsed {
+  width: 40px; min-width: 40px; overflow: hidden;
+  transition: width 0.2s ease;
+}
+.sidebar { transition: width 0.2s ease; }
+.sidebar.collapsed .sidebar-section-label { display: none; }
+.sidebar.collapsed .sidebar-link { padding: 10px; justify-content: center; min-height: 40px; }
+.sidebar.collapsed .sidebar-link .link-text { display: none; }
+
+/* ── MAIN ── */
+.main { flex: 1; padding: 28px 32px; overflow-y: auto; min-width: 0; }
+
+/* ── SHEET HEADER ── */
+.sheet-header { margin-bottom: 24px; }
+.sheet-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 38px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.sheet-title .gold { color: var(--accent); }
+.session-type-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-top: 10px;
+  margin-bottom: 2px;
+}
+.session-type {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-top: 4px;
+  outline: none;
+  border-bottom: 1px dashed rgba(201,169,78,0.3);
+  display: inline-block;
+  min-width: 220px;
+  padding: 2px 4px;
+}
+.session-type:focus { border-bottom-color: var(--accent); background: rgba(201,169,78,0.05); border-radius: 3px 3px 0 0; }
+.sheet-meta { display: flex; gap: 16px; margin-top: 14px; flex-wrap: wrap; }
+.meta-item { display: flex; flex-direction: column; gap: 2px; }
+.meta-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.meta-value {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  min-width: 100px;
+  padding: 2px 4px;
+  outline: none;
+}
+.meta-value:focus { border-bottom-color: var(--accent); background: rgba(201,169,78,0.04); }
+
+/* ── SECTIONS ── */
+.section { margin-bottom: 28px; position: relative; }
+.section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.section-title-wrap { display: flex; align-items: center; gap: 8px; }
+.section-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+  outline: none;
+  padding: 1px 3px;
+}
+.section-title:focus { color: var(--accent); background: rgba(201,169,78,0.06); border-radius: 2px; }
+.section-line { flex: 1; height: 1px; background: var(--border); }
+
+/* ── TABLE ── */
+.prog-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  table-layout: auto;
+}
+.prog-table thead tr { background: var(--surface2); }
+.prog-table th {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.prog-table th.col-exercise { color: var(--accent); }
+.prog-table tbody tr { background: var(--surface); border-bottom: 1px solid var(--border); }
+.prog-table tbody tr:last-child { border-bottom: none; }
+.prog-table tbody tr:nth-child(even) { background: #1e1e1e; }
+
+/* ── CELLS ── */
+.prog-table td { padding: 0; vertical-align: top; }
+.cell-edit {
+  display: block;
+  width: 100%;
+  min-height: 36px;
+  padding: 8px 10px;
+  outline: none;
+  color: var(--text);
+  font-family: 'Barlow', sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+  background: transparent;
+  border: 1.5px solid transparent;
+  transition: border-color 0.12s, background 0.12s;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+/* Data cells: expand horizontally to fit content, never auto-wrap */
+.cell-edit.sets-cell,
+.cell-edit.reps-cell,
+.cell-edit.rpe-cell,
+.cell-edit.rest-cell,
+.cell-edit.cues-cell,
+.cell-edit.extra-cell {
+  display: inline-block;
+  width: max-content;
+  min-width: 100%;
+  white-space: pre;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+.cell-edit:focus { border-color: var(--accent); background: rgba(201,169,78,0.05); border-radius: 3px; }
+.cell-edit.ex-name { font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 700; }
+.cell-edit.sets-cell { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 700; text-align: center; }
+.cell-edit.reps-cell { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 700; text-align: center; color: var(--accent); }
+.cell-edit.rpe-cell { font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 700; text-align: center; color: var(--accent); }
+.cell-edit.cues-cell { font-size: 12px; color: var(--text-muted); }
+.cell-edit.extra-cell { font-size: 12px; color: var(--text-dim); font-style: italic; }
+.cell-edit.rest-cell { font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 700; text-align: center; color: var(--text-muted); }
+
+/* col widths — number/text cols shrink to content then expand with it */
+.col-exercise { width: 18%; min-width: 100px; }
+.col-sets     { width: 1px; white-space: nowrap; }
+.col-reps     { width: 1px; white-space: nowrap; }
+.col-rpe      { width: 1px; white-space: nowrap; }
+.col-rest     { width: 1px; white-space: nowrap; }
+.col-cues     { width: 1px; white-space: nowrap; }
+.col-extra    { width: 1px; white-space: nowrap; }
+.col-del      { width: 32px; min-width: 32px; }
+
+/* ── EDIT MODE: row delete button ── */
+.row-del-cell {
+  width: 32px; min-width: 32px; padding: 0 !important;
+  display: none; vertical-align: middle;
+}
+body.edit-mode .row-del-cell { display: table-cell; }
+.row-del-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; margin: 4px auto;
+  background: rgba(224,85,85,0.1); color: var(--red);
+  border: 1px solid rgba(224,85,85,0.25); border-radius: 5px;
+  cursor: pointer; font-size: 14px; transition: background 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.row-del-btn:hover, .row-del-btn:active { background: rgba(224,85,85,0.25); }
+
+/* ── EDIT MODE: add row / add section buttons ── */
+.add-row-btn {
+  display: none;
+  width: 100%; margin-top: 6px;
+  background: rgba(201,169,78,0.06); color: var(--accent);
+  border: 1px dashed rgba(201,169,78,0.25); border-radius: 4px;
+  font-family: 'Barlow Condensed', sans-serif; font-size: 11px;
+  font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+  padding: 7px; cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.add-row-btn:hover, .add-row-btn:active { background: rgba(201,169,78,0.12); border-color: rgba(201,169,78,0.4); }
+body.edit-mode .add-row-btn { display: block; }
+
+/* section delete/drag controls */
+.section-del-btn {
+  display: none; align-items: center; justify-content: center;
+  width: 26px; height: 26px;
+  background: rgba(224,85,85,0.1); color: var(--red);
+  border: 1px solid rgba(224,85,85,0.22); border-radius: 4px;
+  cursor: pointer; font-size: 13px; flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.section-del-btn:hover, .section-del-btn:active { background: rgba(224,85,85,0.25); }
+body.edit-mode .section-del-btn { display: flex; }
+
+/* add section button */
+.add-section-bar {
+  display: none;
+  margin: 12px 0 20px;
+}
+body.edit-mode .add-section-bar { display: block; }
+.add-section-btn {
+  width: 100%;
+  background: rgba(93,173,122,0.06); color: var(--green);
+  border: 1px dashed rgba(93,173,122,0.3); border-radius: 5px;
+  font-family: 'Barlow Condensed', sans-serif; font-size: 11px;
+  font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+  padding: 9px; cursor: pointer;
+  transition: background 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.add-section-btn:hover, .add-section-btn:active { background: rgba(93,173,122,0.14); }
+
+/* drag handle */
+.drag-handle {
+  display: none; align-items: center; justify-content: center;
+  width: 22px; height: 26px; cursor: grab; color: var(--text-dim);
+  font-size: 12px; flex-shrink: 0; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+body.edit-mode .drag-handle { display: flex; }
+.section.drag-over { outline: 2px dashed var(--accent); outline-offset: 4px; border-radius: 4px; }
+.section.drag-ghost { opacity: 0.35; }
+
+/* ── SESSION NOTES ── */
+.notes-block {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+  padding: 14px 16px;
+}
+.notes-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 6px;
+}
+.notes-edit {
+  width: 100%; min-height: 64px;
+  outline: none; color: var(--text-muted);
+  font-family: 'Barlow', sans-serif; font-size: 13px; line-height: 1.65;
+  background: transparent; white-space: pre-wrap; word-break: break-word;
+}
+.notes-edit:focus { color: var(--text); }
+
+/* ── FOOTER ── */
+.sheet-footer {
+  margin-top: 32px; padding-top: 14px;
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center;
+  justify-content: space-between; flex-wrap: wrap; gap: 8px;
+}
+.footer-brand { font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; color: var(--text-dim); text-transform: uppercase; }
+.footer-brand span { color: var(--accent); }
+.footer-note { font-size: 11px; color: var(--text-dim); }
+
+/* ── PRINT ── */
+@media print {
+  body { background: #fff; color: #111; }
+  .topbar, .sidebar, .add-row-btn, .add-section-bar, .section-del-btn, .drag-handle, .row-del-cell { display: none !important; }
+  .main { padding: 20px; }
+  .layout { display: block; }
+  .prog-table th { color: #444; background: #f0f0f0; }
+  .prog-table thead tr { background: #f0f0f0; }
+  .prog-table tbody tr { background: #fff; }
+  .prog-table tbody tr:nth-child(even) { background: #f8f8f8; }
+  .cell-edit { color: #111; border-color: transparent !important; background: transparent !important; }
+  .cell-edit.reps-cell, .cell-edit.rpe-cell { color: #7a5c10; }
+  .notes-block { background: #fafafa; }
+  .sheet-title .gold { color: #7a5c10; }
+}
+
+/* ── TABLET (768–1023px) ── */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .sidebar { width: 170px; min-width: 40px; }
+  .sidebar.collapsed { width: 40px; min-width: 40px; }
+  .main { padding: 20px 18px; }
+  .sheet-title { font-size: 30px; }
+  /* all columns visible via horizontal scroll */
+  .table-scroll-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .prog-table { min-width: 680px; }
+  .col-extra { display: table-cell; }
+  .col-cues { width: 22%; }
+  .col-extra { width: 22%; }
+}
+
+/* ── PHONE (<768px) ── */
+@media (max-width: 767px) {
+  /* Topbar */
+  .topbar { padding: 0 10px; gap: 6px; height: 50px; }
+  .topbar-title, .divider-v, .topbar-hint { display: none; }
+  .topbar-right { gap: 5px; }
+  .tb-btn { padding: 5px 9px; font-size: 11px; min-height: 34px; }
+
+  /* Layout: sidebar collapses to icon rail */
+  .layout { flex-direction: row; align-items: stretch; }
+  .sidebar {
+    width: 40px; min-width: 40px;
+    height: calc(100dvh - 50px);
+    overflow: hidden; flex-shrink: 0;
+    position: sticky; top: 50px;
+    transition: width 0.2s ease;
+  }
+  .sidebar .sidebar-section-label { display: none; }
+  .sidebar .sidebar-link { padding: 10px; justify-content: center; min-height: 44px; }
+  .sidebar .sidebar-link .link-text { display: none; }
+  /* phone expanded */
+  .sidebar.expanded {
+    width: 180px; min-width: 180px; overflow-y: auto;
+  }
+  .sidebar.expanded .sidebar-section-label { display: block; }
+  .sidebar.expanded .sidebar-link { padding: 8px 14px; justify-content: flex-start; }
+  .sidebar.expanded .sidebar-link .link-text { display: inline; }
+  .main { flex: 1; padding: 12px 10px 80px; min-width: 0; overflow-x: hidden; }
+
+  /* Header */
+  .sheet-title { font-size: 22px; }
+  .session-type { font-size: 16px; min-width: 130px; }
+  .sheet-meta { gap: 8px; flex-wrap: wrap; }
+  .meta-value { min-width: 70px; font-size: 13px; }
+
+  /* Table: horizontal scroll all columns — wider cells for readability */
+  .table-scroll-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: var(--radius); }
+  .prog-table { min-width: 780px; width: 100%; }
+  /* Phone columns — inherit global auto-width, just ensure extra is visible */
+  .col-exercise { width: 16%; min-width: 100px; }
+  .col-extra    { display: table-cell; }
+  /* Cell sizing on phone — base nowrap already set globally */
+  .cell-edit { min-height: 46px; padding: 10px 8px; height: auto; }
+  .cell-edit.sets-cell, .cell-edit.reps-cell, .cell-edit.rpe-cell, .cell-edit.rest-cell,
+  .cell-edit.cues-cell, .cell-edit.extra-cell { padding: 10px 8px; }
+  .cell-edit.cues-cell { font-size: 12.5px; }
+  .cell-edit.extra-cell { font-size: 12.5px; }
+
+  /* Add row btn */
+  .add-row-btn { padding: 9px; font-size: 12px; }
+
+  /* Section */
+  .section { margin-bottom: 20px; }
+
+  /* Footer */
+  .sheet-footer { flex-direction: column; align-items: flex-start; }
+}
+
+/* ── INTENSITY METER ── */
+.intensity-meter {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px 16px;
+  margin-bottom: 24px;
+}
+.intensity-meter-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px; font-weight: 700;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+.intensity-callout {
+  background: #1e1e1e;
+  border-left: 3px solid var(--accent);
+  border-radius: 0 4px 4px 0;
+  padding: 9px 14px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+.intensity-callout strong { color: var(--accent); }
+.intensity-track {
+  height: 9px;
+  border-radius: 100px;
+  margin-bottom: 18px;
+  background: linear-gradient(to right,
+    #4a9e87 0%, #4a9e87 30%,
+    #6aadcf 30%, #6aadcf 50%,
+    #e8935a 50%, #e8935a 70%,
+    #e85d4a 70%, #e85d4a 100%
+  );
+}
+.intensity-zones {
+  display: grid;
+  grid-template-columns: 30fr 20fr 20fr 30fr;
+  gap: 0;
+  margin-bottom: 14px;
+}
+.intensity-zone { padding: 0 8px 0 0; }
+.intensity-zone-pct {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.06em; margin-bottom: 3px;
+}
+.intensity-zone-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px; font-weight: 700;
+  margin-bottom: 4px;
+}
+.intensity-zone-desc { font-size: 11.5px; color: var(--text-muted); line-height: 1.5; }
+.iz-warmup .intensity-zone-pct,  .iz-warmup .intensity-zone-label  { color: #4a9e87; }
+.iz-reserve .intensity-zone-pct, .iz-reserve .intensity-zone-label { color: #6aadcf; }
+.iz-strain .intensity-zone-pct,  .iz-strain .intensity-zone-label  { color: #e8935a; }
+.iz-limit .intensity-zone-pct,   .iz-limit .intensity-zone-label   { color: #e85d4a; }
+.intensity-session-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.isession-tag {
+  display: flex; align-items: center; gap: 6px;
+  background: #1e1e1e; border: 1px solid var(--border);
+  border-radius: 20px; padding: 4px 10px 4px 8px;
+  font-size: 11.5px; color: var(--text-muted);
+}
+.isession-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.isession-dot-submax { background: #6aadcf; }
+.isession-dot-me { background: #e85d4a; }
+
+/* ── COLOUR PICKER ── */
+.colour-picker-popup {
+  position: fixed;
+  background: #1a1a1a;
+  border: 1px solid #3a3a3a;
+  border-radius: 8px;
+  padding: 10px 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+  z-index: 9999;
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 180px;
+}
+.colour-picker-popup.visible { display: flex; }
+.colour-picker-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--text-dim);
+}
+.colour-swatches {
+  display: flex; flex-wrap: wrap; gap: 5px;
+}
+.colour-swatch {
+  width: 22px; height: 22px; border-radius: 4px;
+  cursor: pointer; border: 2px solid transparent;
+  transition: border-color 0.12s, transform 0.1s;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.colour-swatch:hover { transform: scale(1.15); border-color: rgba(255,255,255,0.4); }
+.colour-picker-row { display: flex; align-items: center; gap: 8px; }
+.colour-custom-input {
+  width: 36px; height: 36px;
+  border: none; border-radius: 4px;
+  padding: 2px; cursor: pointer;
+  background: transparent;
+}
+.colour-custom-label { font-size: 11px; color: var(--text-muted); }
+.colour-reset-btn {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  background: transparent; color: var(--text-dim);
+  border: 1px solid var(--border); border-radius: 4px;
+  padding: 4px 8px; cursor: pointer; width: 100%;
+  transition: color 0.12s, border-color 0.12s;
+}
+.colour-reset-btn:hover { color: var(--text); border-color: #555; }
+
+/* intensity meter mobile */
+@media (max-width: 767px) {
+  .intensity-meter { padding: 12px 10px 12px; }
+  /* Horizontal single-row scroll for intensity zones on phone */
+  .intensity-zones-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 6px; margin-bottom: 8px; }
+  .intensity-zones-wrap::-webkit-scrollbar { height: 3px; }
+  .intensity-zones-wrap::-webkit-scrollbar-track { background: var(--border); border-radius: 3px; }
+  .intensity-zones-wrap::-webkit-scrollbar-thumb { background: rgba(201,169,78,0.4); border-radius: 3px; }
+  .intensity-zones { grid-template-columns: 140px 120px 120px 140px; gap: 0; width: max-content; min-width: 100%; margin-bottom: 0; }
+  .intensity-zone { padding: 0 10px 0 0; min-width: 120px; }
+  .intensity-zone-desc { font-size: 11px; }
+}
+@media print {
+  .intensity-meter { display: none; }
+  .colour-picker-popup { display: none !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="brand">COACH <span>|</span> SHEET</div>
+  <div class="divider-v"></div>
+  <div class="topbar-title">Programming Sheet</div>
+  <div class="topbar-right">
+    <div class="topbar-hint">Click to edit · Right-click text to change colour</div>
+    <button class="tb-btn edit-toggle-btn" id="editToggleBtn" onclick="toggleEditMode()">✏ Edit</button>
+    <button class="tb-btn undo-btn" id="undoBtn" onclick="undoAction()" disabled title="Undo (Ctrl+Z)">↩</button>
+    <button class="tb-btn redo-btn" id="redoBtn" onclick="redoAction()" disabled title="Redo (Ctrl+Y)">↪</button>
+    <button class="tb-btn clear-btn" id="clearBtn" onclick="clearSheet()">✕ Clear</button>
+    <button class="tb-btn save-btn" id="saveBtn" onclick="saveClientSheet()">↓ Save Copy</button>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-section-label">Navigation</div>
+    <a class="sidebar-link active" href="#section-skill-strength"><span class="dot"></span><span class="link-text">Skill &amp; Strength</span></a>
+    <a class="sidebar-link" href="#section-conditioning"><span class="dot"></span><span class="link-text">Conditioning</span></a>
+    <a class="sidebar-link" href="#section-mobility"><span class="dot"></span><span class="link-text">Mobility / Cool-down</span></a>
+    <div class="sidebar-section-label" style="margin-top:6px;">Quick Ref</div>
+    <a class="sidebar-link" href="#section-notes"><span class="dot"></span><span class="link-text">Session Notes</span></a>
+    <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()" title="Collapse / Expand sidebar">&lsaquo;</button>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main" id="mainContent">
+
+    <!-- COLOUR PICKER POPUP -->
+    <div class="colour-picker-popup" id="colourPickerPopup">
+      <div class="colour-picker-label">Text Colour</div>
+      <div class="colour-swatches" id="colourSwatches"></div>
+      <div class="colour-picker-row">
+        <input type="color" class="colour-custom-input" id="colourCustomInput" value="#e8e8e8">
+        <span class="colour-custom-label">Custom colour</span>
+      </div>
+      <button class="colour-reset-btn" id="colourResetBtn">↺ Reset to default</button>
+    </div>
+
+    <!-- INTENSITY METER -->
+    <div class="intensity-meter" id="intensityMeter">
+      <div class="intensity-meter-title" contenteditable="true" spellcheck="false">Intensity Meter</div>
+      <div class="intensity-callout" contenteditable="true" spellcheck="false"><strong>What is intensity?</strong> In calisthenics, intensity reflects how close you're working to your limit — measured by proximity to form breakdown, not just load. The zones below define effort bands and when each is appropriate.</div>
+      <div class="intensity-track"></div>
+      <div class="intensity-zones-wrap">
+      <div class="intensity-zones">
+        <div class="intensity-zone iz-warmup">
+          <div class="intensity-zone-pct" contenteditable="true" spellcheck="false">0–30%</div>
+          <div class="intensity-zone-label" contenteditable="true" spellcheck="false">Warm-Up</div>
+          <div class="intensity-zone-desc" contenteditable="true" spellcheck="false">Just getting blood moving. No real effort. Joint prep, activation, and mobility work.</div>
+        </div>
+        <div class="intensity-zone iz-reserve">
+          <div class="intensity-zone-pct" contenteditable="true" spellcheck="false">30–50%</div>
+          <div class="intensity-zone-label" contenteditable="true" spellcheck="false">In Reserve</div>
+          <div class="intensity-zone-desc" contenteditable="true" spellcheck="false">A solid amount in reserve. Only the slightest hint of effort on the last rep.</div>
+        </div>
+        <div class="intensity-zone iz-strain">
+          <div class="intensity-zone-pct" contenteditable="true" spellcheck="false">50–70%</div>
+          <div class="intensity-zone-label" contenteditable="true" spellcheck="false">Real Strain</div>
+          <div class="intensity-zone-desc" contenteditable="true" spellcheck="false">You feel real strain and holding good form becomes difficult — but form does <em>not</em> break down.</div>
+        </div>
+        <div class="intensity-zone iz-limit">
+          <div class="intensity-zone-pct" contenteditable="true" spellcheck="false">70%+</div>
+          <div class="intensity-zone-label" contenteditable="true" spellcheck="false">At The Limit</div>
+          <div class="intensity-zone-desc" contenteditable="true" spellcheck="false">Form breaks down. You are pushing the limit and forcing adaptation. Used mainly on intense days to break through plateaus.</div>
+        </div>
+      </div>
+      </div><!-- end intensity-zones-wrap -->
+      <div class="intensity-session-tags">
+        <div class="isession-tag" contenteditable="true" spellcheck="false"><div class="isession-dot isession-dot-submax"></div>Submax / Volume Day → 30–70% intensity</div>
+        <div class="isession-tag" contenteditable="true" spellcheck="false"><div class="isession-dot isession-dot-me"></div>ME / Intensity Day → peaks at 70%+</div>
+      </div>
+    </div>
+
+    <!-- SHEET HEADER -->
+    <div class="sheet-header">
+      <div class="sheet-title">
+        <span contenteditable="true" spellcheck="false" style="outline:none;border-bottom:1px dashed rgba(232,232,232,0.15);padding-bottom:2px;">CLIENT</span>
+        <span class="gold" contenteditable="true" spellcheck="false" style="outline:none;border-bottom:1px dashed rgba(201,169,78,0.3);padding-bottom:2px;">PROGRAM</span>
+      </div>
+      <div class="session-type-label" contenteditable="true" spellcheck="false">Session Type</div>
+      <div class="session-type" contenteditable="true" spellcheck="false">Max Effort Session</div>
+      <div class="sheet-meta">
+        <div class="meta-item"><div class="meta-label" contenteditable="true" spellcheck="false">Client</div><div class="meta-value" contenteditable="true" spellcheck="false"> </div></div>
+        <div class="meta-item"><div class="meta-label" contenteditable="true" spellcheck="false">Week / Block</div><div class="meta-value" contenteditable="true" spellcheck="false"> </div></div>
+        <div class="meta-item"><div class="meta-label" contenteditable="true" spellcheck="false">Date</div><div class="meta-value" contenteditable="true" spellcheck="false"> </div></div>
+        <div class="meta-item"><div class="meta-label" contenteditable="true" spellcheck="false">Session</div><div class="meta-value" contenteditable="true" spellcheck="false" style="min-width:60px;"> </div></div>
+        <div class="meta-item"><div class="meta-label" contenteditable="true" spellcheck="false">Focus</div><div class="meta-value" contenteditable="true" spellcheck="false"> </div></div>
+      </div>
+    </div>
+
+    <!-- SECTIONS CONTAINER -->
+    <div id="sectionsContainer"></div>
+
+    <!-- SESSION NOTES -->
+    <div class="section" id="section-notes">
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <div class="drag-handle" title="Drag to reorder">⠿</div>
+          <div class="section-title" contenteditable="false" spellcheck="false">Session Notes</div>
+        </div>
+        <div class="section-line"></div>
+        <button class="section-del-btn" title="Delete section" onclick="deleteSection(this)">🗑</button>
+      </div>
+      <div class="notes-block">
+        <div class="notes-label" contenteditable="true" spellcheck="false">Coach Notes</div>
+        <div class="notes-edit" contenteditable="true" spellcheck="false">Add general session notes, warm-up instructions, rest periods, or any overarching cues here.</div>
+      </div>
+    </div>
+
+    <!-- ADD SECTION BUTTON -->
+    <div class="add-section-bar">
+      <button class="add-section-btn" onclick="addSection()">+ Add Exercise Section</button>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="sheet-footer">
+      <div class="footer-brand" contenteditable="true" spellcheck="false">COACH <span>|</span> SHEET</div>
+      <div class="footer-note" id="footerNote" contenteditable="true" spellcheck="false">Click any cell to edit — share the file with clients to view.</div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ── STATE ──
+var editMode = false;
+var dragSrc = null;
+
+// ── UNDO / REDO ──
+var _undoStack = [], _redoStack = [];
+var _HISTORY_LIMIT = 10;
+
+function _snapshot() {
+  var clone = document.getElementById('sectionsContainer').cloneNode(true);
+  clone.querySelectorAll('.add-row-btn,.section-del-btn,.drag-handle,.row-del-cell,.row-del-btn').forEach(function(el){ el.remove(); });
+  clone.querySelectorAll('[data-drag-ready]').forEach(function(el){ el.removeAttribute('data-drag-ready'); });
+  var metaVals = Array.from(document.querySelectorAll('.meta-value')).map(function(el){ return el.innerHTML || ''; });
+  var neEl = document.querySelector('.notes-edit');
+  var notesVal = neEl ? (neEl.innerHTML || '') : '';
+  return JSON.stringify({ s: clone.innerHTML, m: metaVals, n: notesVal });
+}
+
+function _pushHistory() {
+  _undoStack.push(_snapshot());
+  if (_undoStack.length > _HISTORY_LIMIT) _undoStack.shift();
+  _redoStack = [];
+  _syncHistoryBtns();
+}
+
+function _syncHistoryBtns() {
+  var u = document.getElementById('undoBtn'), r = document.getElementById('redoBtn');
+  if (u) u.disabled = !_undoStack.length;
+  if (r) r.disabled = !_redoStack.length;
+}
+
+function _restoreSnapshot(snap) {
+  var data = JSON.parse(snap);
+  var container = document.getElementById('sectionsContainer');
+  container.innerHTML = data.s;
+  container.querySelectorAll('.section').forEach(function(sec){ initDragOnSection(sec); });
+  if (editMode) _injectEditUI();
+  var metaEls = document.querySelectorAll('.meta-value');
+  if (data.m) data.m.forEach(function(v, i){ if (metaEls[i]) metaEls[i].innerHTML = v; });
+  var neEl = document.querySelector('.notes-edit');
+  if (neEl && data.n !== undefined) neEl.innerHTML = data.n;
+  updateSidebar();
+  _syncHistoryBtns();
+  _attachTextListeners();
+}
+
+function _injectEditUI() {
+  // Re-add add-row btns, del btns, drag handles that were stripped from snapshot
+  var container = document.getElementById('sectionsContainer');
+  container.querySelectorAll('.section').forEach(function(sec) {
+    // drag handle
+    var titleWrap = sec.querySelector('.section-title-wrap');
+    if (titleWrap && !titleWrap.querySelector('.drag-handle')) {
+      var dh = document.createElement('div');
+      dh.className = 'drag-handle'; dh.title = 'Drag to reorder'; dh.textContent = '⠿';
+      titleWrap.insertBefore(dh, titleWrap.firstChild);
+      initDragOnSection(sec);
+    }
+    // section del btn
+    var hdr = sec.querySelector('.section-header');
+    if (hdr && !hdr.querySelector('.section-del-btn')) {
+      var db = document.createElement('button');
+      db.className = 'section-del-btn'; db.title = 'Delete section'; db.innerHTML = '🗑';
+      db.setAttribute('onclick','deleteSection(this)');
+      hdr.appendChild(db);
+    }
+    // row del cells
+    sec.querySelectorAll('tbody tr').forEach(function(tr){
+      if (!tr.querySelector('.row-del-cell')) {
+        var td = document.createElement('td');
+        td.className = 'row-del-cell';
+        td.innerHTML = '<button class="row-del-btn" onclick="deleteRow(this)" title="Delete row">🗑</button>';
+        tr.appendChild(td);
+      }
+    });
+    // add row btn
+    if (!sec.querySelector('.add-row-btn')) {
+      var arb = document.createElement('button');
+      arb.className = 'add-row-btn'; arb.textContent = '+ Add Row';
+      arb.setAttribute('onclick','addRow(this)');
+      sec.appendChild(arb);
+    }
+    // section title editable
+    var st = sec.querySelector('.section-title');
+    if (st) st.contentEditable = 'true';
+  });
+}
+
+var _textTimer = null;
+function _attachTextListeners() {
+  document.querySelectorAll('#sectionsContainer .cell-edit, .meta-value, .notes-edit').forEach(function(el) {
+    if (el.dataset.hl) return;
+    el.dataset.hl = '1';
+    el.addEventListener('input', function() {
+      clearTimeout(_textTimer);
+      _textTimer = setTimeout(_pushHistory, 800);
+    });
+  });
+}
+
+function undoAction() {
+  if (!_undoStack.length) return;
+  _redoStack.push(_snapshot());
+  if (_redoStack.length > _HISTORY_LIMIT) _redoStack.shift();
+  _restoreSnapshot(_undoStack.pop());
+}
+
+function redoAction() {
+  if (!_redoStack.length) return;
+  _undoStack.push(_snapshot());
+  if (_undoStack.length > _HISTORY_LIMIT) _undoStack.shift();
+  _restoreSnapshot(_redoStack.pop());
+}
+
+document.addEventListener('keydown', function(e) {
+  if ((e.ctrlKey||e.metaKey) && e.key==='z' && !e.shiftKey) { e.preventDefault(); undoAction(); }
+  if ((e.ctrlKey||e.metaKey) && (e.key==='y' || (e.key==='z'&&e.shiftKey))) { e.preventDefault(); redoAction(); }
+});
+
+// ── SECTION TEMPLATES ──
+var defaultSections = [
+  { id: 'section-skill-strength', title: 'Skill & Strength Work', rows: 10 },
+  { id: 'section-conditioning',   title: 'Conditioning',          rows: 4  },
+  { id: 'section-mobility',       title: 'Mobility / Cool-down',  rows: 4  }
+];
+
+function makeRowHTML() {
+  return '<tr>' +
+    '<td class="col-exercise"><span class="cell-edit ex-name" contenteditable="true" spellcheck="false"> </span></td>' +
+    '<td class="col-sets"><span class="cell-edit sets-cell" contenteditable="true" spellcheck="false"> </span></td>' +
+    '<td class="col-reps"><span class="cell-edit reps-cell" contenteditable="true" spellcheck="false"> </span></td>' +
+    '<td class="col-rpe"><span class="cell-edit rpe-cell" contenteditable="true" spellcheck="false"> </span></td>' +
+    '<td class="col-rest"><span class="cell-edit rest-cell" contenteditable="true" spellcheck="false"> </span></td>' +
+    '<td class="col-cues"><span class="cell-edit cues-cell" contenteditable="true" spellcheck="false"> </span></td>' +
+    '<td class="col-extra"><span class="cell-edit extra-cell" contenteditable="true" spellcheck="false"> </span></td>' +
+    '<td class="row-del-cell"><button class="row-del-btn" onclick="deleteRow(this)" title="Delete row">🗑</button></td>' +
+    '</tr>';
+}
+
+function buildSection(id, title, rowCount) {
+  var secId = id || ('section-' + Date.now());
+  var div = document.createElement('div');
+  div.className = 'section';
+  div.id = secId;
+  div.innerHTML =
+    '<div class="section-header">' +
+      '<div class="section-title-wrap">' +
+        '<div class="drag-handle" title="Drag to reorder">⠿</div>' +
+        '<div class="section-title" contenteditable="false" spellcheck="false">' + title + '</div>' +
+      '</div>' +
+      '<div class="section-line"></div>' +
+      '<button class="section-del-btn" title="Delete section" onclick="deleteSection(this)">🗑</button>' +
+    '</div>' +
+    '<div class="table-scroll-wrap">' +
+      '<table class="prog-table">' +
+        '<thead><tr>' +
+          '<th class="col-exercise" contenteditable="true" spellcheck="false">Exercise</th>' +
+          '<th class="col-sets" contenteditable="true" spellcheck="false">Sets</th>' +
+          '<th class="col-reps" contenteditable="true" spellcheck="false">Reps / Secs</th>' +
+          '<th class="col-rpe" contenteditable="true" spellcheck="false">RPE</th>' +
+          '<th class="col-rest" contenteditable="true" spellcheck="false">Rest</th>' +
+          '<th class="col-cues" contenteditable="true" spellcheck="false">Cue Notes</th>' +
+          '<th class="col-extra" contenteditable="true" spellcheck="false">Extra Notes</th>' +
+          '<th class="row-del-cell" style="background:transparent;border:none;"></th>' +
+        '</tr></thead>' +
+        '<tbody>' + Array(rowCount).fill(makeRowHTML()).join('') + '</tbody>' +
+      '</table>' +
+    '</div>' +
+    '<button class="add-row-btn" onclick="addRow(this)">+ Add Row</button>';
+  initDragOnSection(div);
+  return div;
+}
+
+function populateSections() {
+  var container = document.getElementById('sectionsContainer');
+  defaultSections.forEach(function(s) {
+    container.appendChild(buildSection(s.id, s.title, s.rows));
+  });
+  updateSidebar();
+}
+
+// ── EDIT MODE ──
+function toggleEditMode() {
+  editMode = !editMode;
+  var btn = document.getElementById('editToggleBtn');
+  if (editMode) {
+    document.body.classList.add('edit-mode');
+    btn.textContent = '✓ Done Editing';
+    btn.classList.add('active');
+    // Make section titles editable
+    document.querySelectorAll('.section-title').forEach(function(t) { t.contentEditable = 'true'; });
+    document.getElementById('footerNote').textContent = 'Edit mode — add/delete rows and sections freely.';
+  } else {
+    document.body.classList.remove('edit-mode');
+    btn.textContent = '✏ Edit';
+    btn.classList.remove('active');
+    document.querySelectorAll('.section-title').forEach(function(t) { t.contentEditable = 'false'; });
+    document.getElementById('footerNote').textContent = 'Click any cell to edit — share the file with clients to view.';
+    updateSidebar();
+  }
+}
+
+// ── ADD / DELETE ROWS ──
+function addRow(btn) {
+  _pushHistory();
+  var tbody = btn.closest('.section').querySelector('tbody');
+  var tr = document.createElement('tr');
+  tr.innerHTML = makeRowHTML().replace(/^<tr>|<\/tr>$/g, '');
+  // makeRowHTML wraps in <tr>, so just insert the tr
+  var temp = document.createElement('tbody');
+  temp.innerHTML = makeRowHTML();
+  tbody.appendChild(temp.firstChild);
+  _attachTextListeners();
+}
+
+function deleteRow(btn) {
+  _pushHistory();
+  var tr = btn.closest('tr');
+  if (tr) tr.remove();
+}
+
+// ── ADD / DELETE SECTIONS ──
+function addSection() {
+  _pushHistory();
+  var container = document.getElementById('sectionsContainer');
+  var title = 'New Section';
+  var sec = buildSection(null, title, 4);
+  container.appendChild(sec);
+  // Scroll to new section
+  if (sec.scrollIntoView) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  updateSidebar();
+  _attachTextListeners();
+}
+
+function deleteSection(btn) {
+  _pushHistory();
+  var section = btn.closest('.section');
+  if (!section) return;
+  section.remove();
+  updateSidebar();
+}
+
+// ── SIDEBAR SYNC ──
+function updateSidebar() {
+  var sidebar = document.getElementById('sidebar');
+  // Remove existing section links (keep non-section ones? — rebuild all)
+  sidebar.innerHTML =
+    '<div class="sidebar-section-label">Navigation</div>';
+  var sections = document.querySelectorAll('.section[id]');
+  sections.forEach(function(sec) {
+    var titleEl = sec.querySelector('.section-title');
+    var notesEl = sec.querySelector('.notes-label');
+    var label = titleEl ? titleEl.textContent.trim() : (notesEl ? 'Session Notes' : sec.id);
+    var a = document.createElement('a');
+    a.className = 'sidebar-link';
+    a.href = '#' + sec.id;
+    a.innerHTML = '<span class="dot"></span><span class="link-text">' + label + '</span>';
+    a.addEventListener('click', function(e) {
+      e.preventDefault();
+      sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.querySelectorAll('.sidebar-link').forEach(function(l){ l.classList.remove('active'); });
+      a.classList.add('active');
+    });
+    sidebar.appendChild(a);
+  });
+}
+
+// ── DRAG & DROP SECTIONS (pointer events — works on touch + mouse) ──
+var _touchClone = null, _touchLastTarget = null;
+
+function initDragOnSection(el) {
+  if (el.dataset.dragReady) return;
+  el.dataset.dragReady = '1';
+
+  var handle = el.querySelector('.drag-handle');
+  if (!handle) return;
+
+  // Desktop HTML5 drag
+  el.draggable = false; // only drag via handle
+  handle.addEventListener('mousedown', function() { el.draggable = true; });
+  el.addEventListener('dragstart', function(e) {
+    if (!editMode) { e.preventDefault(); el.draggable = false; return; }
+    dragSrc = el;
+    e.dataTransfer.effectAllowed = 'move';
+    setTimeout(function(){ el.classList.add('drag-ghost'); }, 0);
+  });
+  el.addEventListener('dragend', function() {
+    el.draggable = false;
+    el.classList.remove('drag-ghost');
+    dragSrc = null;
+  });
+  el.addEventListener('dragover', function(e) {
+    if (!editMode || !dragSrc || dragSrc === el) return;
+    e.preventDefault(); el.classList.add('drag-over');
+  });
+  el.addEventListener('dragleave', function() { el.classList.remove('drag-over'); });
+  el.addEventListener('drop', function(e) {
+    e.preventDefault(); el.classList.remove('drag-over');
+    if (!dragSrc || dragSrc === el) return;
+    _swapSections(dragSrc, el);
+  });
+
+  // Touch drag via pointer events on the handle
+  var _startX, _startY;
+  handle.addEventListener('pointerdown', function(e) {
+    if (!editMode) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    _startX = e.clientX; _startY = e.clientY;
+    var rect = el.getBoundingClientRect();
+    _touchClone = el.cloneNode(true);
+    _touchClone.style.cssText = 'position:fixed;left:' + rect.left + 'px;top:' + rect.top + 'px;width:' + rect.width + 'px;opacity:0.85;pointer-events:none;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,0.6);border-radius:6px;';
+    document.body.appendChild(_touchClone);
+    el.classList.add('drag-ghost');
+    dragSrc = el;
+  }, {passive:true});
+
+  handle.addEventListener('pointermove', function(e) {
+    if (!_touchClone) return;
+    var dx = e.clientX - _startX, dy = e.clientY - _startY;
+    _touchClone.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+    var target = document.elementFromPoint(e.clientX, e.clientY);
+    if (target) {
+      var sec = target.closest('.section');
+      if (sec && sec !== el) {
+        if (_touchLastTarget && _touchLastTarget !== sec) _touchLastTarget.classList.remove('drag-over');
+        sec.classList.add('drag-over');
+        _touchLastTarget = sec;
+      }
+    }
+  }, {passive:true});
+
+  handle.addEventListener('pointerup', function() {
+    if (_touchClone) { _touchClone.remove(); _touchClone = null; }
+    el.classList.remove('drag-ghost');
+    if (_touchLastTarget) {
+      _touchLastTarget.classList.remove('drag-over');
+      if (dragSrc) _swapSections(dragSrc, _touchLastTarget);
+      _touchLastTarget = null;
+    }
+    dragSrc = null;
+  });
+  handle.addEventListener('pointercancel', function() {
+    if (_touchClone) { _touchClone.remove(); _touchClone = null; }
+    el.classList.remove('drag-ghost');
+    if (_touchLastTarget) { _touchLastTarget.classList.remove('drag-over'); _touchLastTarget = null; }
+    dragSrc = null;
+  });
+}
+
+function _swapSections(src, tgt) {
+  if (!src || !tgt || src === tgt) return;
+  _pushHistory();
+  var parent = document.getElementById('sectionsContainer');
+  var notesSection = document.getElementById('section-notes');
+  // Don't allow dropping after notes section (it's outside the container)
+  var kids = Array.from(parent.children);
+  var si = kids.indexOf(src), ti = kids.indexOf(tgt);
+  if (si < 0 || ti < 0) return; // notes section isn't in container
+  if (si < ti) parent.insertBefore(src, tgt.nextSibling);
+  else parent.insertBefore(src, tgt);
+  updateSidebar();
+}
+
+// ── SAVE CLIENT COPY ──
+function saveClientSheet() {
+  var goldSpan = document.querySelector('.sheet-title .gold');
+  var clientName = (goldSpan ? goldSpan.innerText.trim() : 'client').replace(/\s+/g,'_') || 'client';
+  var st = document.querySelector('.session-type');
+  var sessionType = (st ? st.innerText.trim() : 'session').replace(/\s+/g,'_') || 'session';
+  var filename = clientName + '_' + sessionType + '.html';
+
+  var clone = document.documentElement.cloneNode(true);
+
+  // Remove edit-mode controls from clone
+  clone.querySelectorAll('.add-row-btn,.add-section-bar,.section-del-btn,.drag-handle,.row-del-cell,.edit-toggle-btn,.tb-btn.edit-toggle-btn').forEach(function(el){ el.remove(); });
+  clone.querySelectorAll('[contenteditable]').forEach(function(el){ el.removeAttribute('contenteditable'); });
+  clone.querySelectorAll('script').forEach(function(s){ s.remove(); });
+  var fn = clone.querySelector('#footerNote');
+  if (fn) fn.textContent = 'Programming sheet prepared by your coach.';
+  var hint = clone.querySelector('.topbar-hint');
+  if (hint) hint.textContent = '';
+
+  var html = '<!DOCTYPE html>\n' + clone.outerHTML;
+  var blob = new Blob([html], {type:'text/html'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+
+  var btn = document.getElementById('saveBtn');
+  btn.textContent = '✓ Saved!'; btn.classList.add('saved');
+  setTimeout(function(){ btn.textContent = '↓ Save Copy'; btn.classList.remove('saved'); }, 2000);
+}
+
+// ── CLEAR SHEET ──
+function clearSheet() {
+  if (!confirm('Clear all entered data? Template text will be preserved.')) return;
+  document.querySelectorAll('#sectionsContainer .cell-edit').forEach(function(el){ el.innerHTML = ''; });
+  document.querySelectorAll('.meta-value').forEach(function(el){ el.innerHTML = ''; });
+  var ne = document.querySelector('.notes-edit');
+  if (ne) ne.innerHTML = '';
+  var cb = document.getElementById('clearBtn');
+  cb.textContent = '✓ Cleared'; cb.style.color = '#5ead7a'; cb.style.borderColor = '#5ead7a';
+  setTimeout(function(){ cb.textContent = '✕ Clear'; cb.style.color = ''; cb.style.borderColor = ''; }, 1800);
+}
+
+// ── SIDEBAR TOGGLE ──
+function toggleSidebar() {
+  var sb = document.getElementById('sidebar');
+  var btn = document.getElementById('sidebarToggle');
+  if (!sb) return;
+  var isMobile = window.innerWidth < 768;
+  if (isMobile) {
+    // phone: toggle expanded class
+    var isExpanded = sb.classList.contains('expanded');
+    sb.classList.toggle('expanded', !isExpanded);
+    if (btn) btn.innerHTML = isExpanded ? '&lsaquo;' : '&rsaquo;';
+  } else {
+    // desktop + tablet: toggle collapsed class
+    var isCollapsed = sb.classList.contains('collapsed');
+    sb.classList.toggle('collapsed', !isCollapsed);
+    if (btn) btn.innerHTML = isCollapsed ? '&lsaquo;' : '&rsaquo;';
+  }
+}
+
+// ── INIT ──
+populateSections();
+_attachTextListeners();
+
+// Init drag on notes section too (it's outside the container but draggable within its own context)
+var notesSec = document.getElementById('section-notes');
+if (notesSec) initDragOnSection(notesSec);
+
+// Scroll-spy for sidebar
+var mainEl = document.getElementById('mainContent');
+if (mainEl) {
+  mainEl.addEventListener('scroll', function() {
+    var links = document.querySelectorAll('.sidebar-link');
+    var secs = document.querySelectorAll('.section[id]');
+    var scrollTop = mainEl.scrollTop;
+    var active = null;
+    secs.forEach(function(sec) {
+      if (sec.offsetTop - 80 <= scrollTop) active = sec.id;
+    });
+    links.forEach(function(l) {
+      l.classList.toggle('active', l.getAttribute('href') === '#' + active);
+    });
+  });
+}
+
+// ── COLOUR PICKER ──
+var _colourTarget = null;
+var _swatches = [
+  '#e8e8e8','#ffffff','#c9a94e','#5ead7a','#6aadcf','#e85d4a','#e8935a',
+  '#a889d4','#4a9e87','#f0c040','#88bbff','#ff88aa',
+  '#888888','#555555','#333333','#111111'
+];
+
+(function initColourPicker() {
+  var popup = document.getElementById('colourPickerPopup');
+  var swatchContainer = document.getElementById('colourSwatches');
+  var customInput = document.getElementById('colourCustomInput');
+  var resetBtn = document.getElementById('colourResetBtn');
+  if (!popup) return;
+
+  // Build swatches
+  _swatches.forEach(function(hex) {
+    var s = document.createElement('div');
+    s.className = 'colour-swatch';
+    s.style.background = hex;
+    s.title = hex;
+    s.addEventListener('click', function() { applyColour(hex); });
+    swatchContainer.appendChild(s);
+  });
+
+  // Custom colour input
+  customInput.addEventListener('input', function() { applyColour(customInput.value); });
+
+  // Reset
+  resetBtn.addEventListener('click', function() {
+    if (_colourTarget) {
+      _colourTarget.style.color = '';
+      closeColourPicker();
+    }
+  });
+
+  // Close on outside click
+  document.addEventListener('click', function(e) {
+    if (!popup.classList.contains('visible')) return;
+    if (!popup.contains(e.target) && e.target !== _colourTarget) closeColourPicker();
+  });
+
+  // Right-click on any contenteditable → open picker
+  document.addEventListener('contextmenu', function(e) {
+    var el = e.target.closest('[contenteditable="true"]');
+    if (!el) return;
+    e.preventDefault();
+    openColourPicker(el, e.clientX, e.clientY);
+  });
+
+  // Long-press on touch devices
+  var _lpTimer = null;
+  document.addEventListener('touchstart', function(e) {
+    var el = e.target.closest('[contenteditable="true"]');
+    if (!el) return;
+    _lpTimer = setTimeout(function() {
+      var touch = e.touches[0];
+      openColourPicker(el, touch.clientX, touch.clientY);
+    }, 600);
+  }, {passive:true});
+  document.addEventListener('touchend', function() { clearTimeout(_lpTimer); }, {passive:true});
+  document.addEventListener('touchmove', function() { clearTimeout(_lpTimer); }, {passive:true});
+})();
+
+function openColourPicker(el, x, y) {
+  _colourTarget = el;
+  var popup = document.getElementById('colourPickerPopup');
+  popup.classList.add('visible');
+  // Sync custom input to current colour
+  var current = el.style.color || '';
+  if (current) {
+    try { document.getElementById('colourCustomInput').value = rgbToHex(current) || '#e8e8e8'; } catch(e){}
+  }
+  // Position popup, keep it within viewport
+  var pw = 192, ph = 160;
+  var vw = window.innerWidth, vh = window.innerHeight;
+  var left = Math.min(x + 4, vw - pw - 8);
+  var top = Math.min(y + 4, vh - ph - 8);
+  popup.style.left = Math.max(8, left) + 'px';
+  popup.style.top = Math.max(8, top) + 'px';
+}
+
+function closeColourPicker() {
+  var popup = document.getElementById('colourPickerPopup');
+  popup.classList.remove('visible');
+  _colourTarget = null;
+}
+
+function applyColour(hex) {
+  if (_colourTarget) {
+    _colourTarget.style.color = hex;
+    closeColourPicker();
+  }
+}
+
+function rgbToHex(rgb) {
+  var m = rgb.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+  if (!m) return rgb;
+  return '#' + [m[1],m[2],m[3]].map(function(v){ return ('0'+parseInt(v).toString(16)).slice(-2); }).join('');
+}
+</script>
+</body>
+</html>
